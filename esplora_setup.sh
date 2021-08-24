@@ -10,10 +10,12 @@
 # ensure mount on boot
 # echo "/dev/disk/by-id/scsi-0Linode_Volume_esplora_volume /mnt/esplora_volume ext4 defaults,noatime,nofail 0 2" | sudo tee -a /etc/fstab
 
-# set esplora directory. Disk containing this directory needs to be large enough to contain the block data for bitcoin full node (~400GB as of 8/12/2021)
-# as well as the blockstream/esplora index, which is around ~800GB when fully compacted, so might need 1.6TB or more during sync/indexing
-dir=~
+# set esplora directory. Disk containing this directory needs to be large enough to contain the block data for bitcoin full node (~400GB for mainnet as of 8/12/2021)
+# as well as the blockstream/esplora index, which is around ~800GB when fully compacted (~400gb for lightmode), so might need 1.6TB or more during sync/indexing.
+# As time passes this may increase
 
+# Specify the directory you're installing esplora to. Ensure it has the space requirements outlined above
+dir=/root
 
 
 #update apt and install docker
@@ -46,6 +48,9 @@ sudo apt-get install -y git
 cd $dir
 git clone https://github.com/Blockstream/esplora.git
 cd esplora
+
+# checkout to commit before UI change. Other changes have also broken script. Keeping here for replicability of script
+git checkout e7870ef663622a34a2533563d65c1fb4d27633f7
 
 # copies Blockchain Commons logo to overwrite menu-logo for esplora
 curl -o bc_logo.png 'https://www.blockchaincommons.com/images/Borromean-rings_minimal-overlap(256x256).png'
@@ -89,8 +94,9 @@ EOF
 cat > $dir/esplora/run_mainnet.sh << EOF
 #!/usr/bin/env bash
 sudo screen -dmS mainnet $dir/esplora/mainnet.sh
-sudo screen -dmS size $dir/esplora/disk_size.sh
 EOF
+
+# sudo screen -dmS size $dir/esplora/disk_size.sh
 
 # creates service for run_mainnet
 
@@ -104,8 +110,8 @@ sudo chmod +x $dir/esplora/mainnet.sh
 $dir/esplora/run_mainnet.sh
 
 # finds onion address from log
-# onion_v2=$(sudo cat $dir/esplora/data_bitcoin_mainnet/bitcoin/debug.log | grep "tor: Got service ID " | cut -d ' ' -f 9 | tail -1)
-onion_v3="$(sudo cat data_bitcoin_mainnet/bitcoin/debug.log | grep "tor: Got service ID " | cut -d ' ' -f 9 | tail -1 | cut -d ':' -f 1)"
+onion_v3=$(sudo cat $dir/esplora/data_bitcoin_mainnet/bitcoin/debug.log | grep "tor: Got service ID " | cut -d ' ' -f 9 | tail -1)
+#onion_v3="$(sudo cat data_bitcoin_mainnet/bitcoin/debug.log | grep "tor: Got service ID " | cut -d ' ' -f 9 | tail -1 | cut -d ':' -f 1)"
 
 
 # overwrite mainnet config.env to add onion to flavors and rename titles to BC Esplora
@@ -135,7 +141,7 @@ cd $dir/esplora
 sudo docker build -t esplora .
 npm run dist
 
-# 
+#
 sudo bash -c 'cat > /etc/systemd/system/mainnet.service' << EOF
 [Unit]
 Description=Starts mainnet esplora in screen under root
@@ -152,3 +158,4 @@ EOF
 
 sudo systemctl daemon-reload
 sudo systemctl start mainnet
+sudo shutdown -r
