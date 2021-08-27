@@ -1,0 +1,11 @@
+- [ ] Simple setup of docker container on debian
+  - [ ] Add support for other OS
+  - [ ] UI modifications and runit scripts
+  - [ ] Resource tracking
+  - [ ] 
+- [ ] Manual setup without docker abstraction
+- [ ] Autoscaling on kubernetes
+  - [ ] Linode
+  - [ ] GKE
+  - [ ] AWS, ecs/eks/
+- [ ] CI/CD pipeslines in gitlab
