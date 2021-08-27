@@ -1,7 +1,53 @@
 # deploy_esplora
-Scripts and screenshots for deploying esplora for bitcoin mainnet in Debian 10
+The primary script in this repo can be used to simplify deployment of Esplora for Bitcoin mainnet. You can run the esplora_setup.sh script in a directory large enough to host the mainnet block data as well as the blockstream version of electrs, which includes an index of transactions allowing for volume level queries without the latency of querying bitcoind on the fly. You can deploy Esplora on any cloud provider or on local hardware. We'll outline a couple of suggestions below. Everything has been configured and tested on Debian 10. 
+
+## Usage
+If you are using a fresh instance on linode, gcloud, aws, or other, you might need to update apt-get and install git.
+
+`sudo apt-get update -y && sudo apt-get install git -y`
+
+Once finished you can clone this repo and the setup script will install everything you need. It can be modified slightly to work in other operating systems but right now it's configured for Debian 10.
+
+`git clone https://github.com/icculp/deploy_esplora.git && cd deploy_esplora`
+
+You can run the script from anywhere, but modify the dir variable to indicate the root of the directory you wish to use, and ensure it's large enough to hold everything (more below on storage requirements)
+
+Script should be modified to take dir as command line argument but for now just modify the script
+
+`dir=/path/large/enough`
+
+Then, just run the script. If you copied the script rather than clone the repo, make sure it's executable.
+
+`chmod +x deploy_esplora.sh`
+
+`./deploy_esplora.sh`
+
+This will install gpg, docker, screen, nodejs + npm, and git if not already installed. The script will build and run the docker container in a screen so that you can attach to it and watch the log if you wish. Additionaly, the script will pull the tor_v3 onion address out of the logs and append it to flavors/bitcoin-mainnet/config.env an rebuild the image and rendering templates. Lastly, it installs the run script as a service and enables the service before restarting to avoid any caching from docker. 
+
+You can view the running screens via 
+
+`sudo screen -ls`
+
+Attach to mainnet via 
+
+`sudo screen -r mainnet`
+
+Detach via ctrl-a and then d
+
+Start, stop, or status on the service
+
+`sudo systemctl status|start|stop mainnet`
+
+If it's not running, view logs via 
+
+```
+journalctl
+journalctl | grep 'error'
+journalctl -u mainnet
+```
 
 
+## Resources
 Esplora has a number of features that could be useful for a variety of use cases. Depending on how you might need to use it, the resource requirements are different in terms of storage size, disk throughput, IOPS, and RAM, which have some subtleties to keep in mind when deploying in the cloud.
 
 Turns out read speed of the drive may not be the underlying limitation with cloud based VPS's. It's IOPS among distributed cloud storage... Basically, the data is stored in a distributed manner and thus IOPS is limited by network bandwidth, and cloud providers allocate more or less throughput based on the size of the instance you're running, or the region or other factors.
