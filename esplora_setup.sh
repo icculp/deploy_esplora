@@ -15,7 +15,8 @@
 # As time passes this may increase
 
 # Specify the directory you're installing esplora to. Ensure it has the space requirements outlined above
-dir=/root
+# if using gcp and mounted drive use /mnt/sdb
+dir=/mnt/sdb
 
 
 #update apt and install docker
@@ -57,6 +58,16 @@ curl -o bc_logo.png 'https://www.blockchaincommons.com/images/Borromean-rings_mi
 cp bc_logo.png $dir/esplora/www/img/icons/menu-logo.png
 cp bc_logo.png $dir/esplora/www/img/favicon.png
 
+# remove other flavors to speed up build time
+cd $dir/esplora/flavors
+ls --hide=bitcoin-mainnet | xargs -d '\n' rm -rf
+cd $dir/esplora
+
+# similar to above, modify Dockerfile to remove liquid, regtest, testnet
+# reduces build time for bitcoin mainnet only
+sed -i.bak -e '29,49d' Dockerfile
+sed -i -e 's/    npm run dist -- bitcoin-mainnet \\/    npm run dist -- bitcoin-mainnet/' Dockerfile
+
 # build docker image and rendering
 sudo docker build -t esplora .
 npm install
@@ -72,7 +83,7 @@ sudo apt-get install -y screen
 # script to monitor disk size over time, useful for noting max size before compaction
 # usually primary disk will be /dev/sda, but if elsewhere, change disk_dir
 # or to monitor all disks remove the dir path from the script
-disk_dir=/dev/sda
+disk_dir=/dev/sdb
 
 cat > $dir/esplora/disk_size.sh << EOF
 #!/usr/bin/env bash
@@ -157,5 +168,6 @@ WantedBy=multi-user.target
 EOF
 
 sudo systemctl daemon-reload
+sudo systemctl enable mainnet
 sudo systemctl start mainnet
 sudo shutdown -r
