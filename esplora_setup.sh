@@ -16,7 +16,7 @@
 
 # Specify the directory you're installing esplora to. Ensure it has the space requirements outlined above
 # if using gcp and mounted drive use /mnt/sdb
-dir=/mnt/sdb
+dir=/mnt/disks/sdb
 
 
 #update apt and install docker
